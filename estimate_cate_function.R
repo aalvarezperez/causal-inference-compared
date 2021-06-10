@@ -1,5 +1,5 @@
 
-fit_learner. <- function(y, w, X, learner, num_search_rounds, n_folds){
+fit_learner. <- function(y, w, X, learner, num_search_rounds, n_folds, W.hat, Y.hat){
   switch(
     learner,
     S = sboost(
@@ -34,16 +34,18 @@ fit_learner. <- function(y, w, X, learner, num_search_rounds, n_folds){
       X = X,
       W = w, 
       tune.parameters = "all",
+      W.hat = W.hat,
+      Y.hat = Y.hat
       )
   )
 }
 
 
-sample_data. <- function(data, sample_prop){
+sample_data. <- function(data, args){
   
   set.seed(42)
   
-  if(is.null(sample_prop)){
+  if(is.null(args$sample_prop)){
     if(nrow(data) > 50e3){
       msg_text <- sprintf("More than 50k rows available: defaulting to training on 50k rows. Use sample_prop otherwise.")
       message(msg_text)
@@ -55,14 +57,14 @@ sample_data. <- function(data, sample_prop){
       data_sampled <- data
     }
   } else{
-    if(!(is.numeric(sample_prop) & (sample_prop > 0 & sample_prop <= 1))) {
+    if(!(is.numeric(args$sample_prop) & (args$sample_prop > 0 & args$sample_prop <= 1))) {
       stop("Sample_prop must be numeric, higher than 0 and lower or equal to 1")
     }
     
     sample_message <- sprintf("sample_prop is provided: training on %s of the observations.", scales::percent(sample_prop))
     message(sample_message)
     
-    sample_index <- sample(1:nrow(data), size = nrow(data)*sample_prop, replace = FALSE)
+    sample_index <- sample(1:nrow(data), size = nrow(data)*args$sample_prop, replace = FALSE)
     data_sampled <- data[sample_index, ]
   }
   data_sampled
@@ -92,6 +94,8 @@ estimate_heterogenous_effects <- function(data,
                                           sample_prop = NULL,
                                           num_search_rounds = 10,
                                           n_folds = 3,
+                                          Y.hat = NULL,
+                                          W.hat = NULL,
                                           learner = c("S", "T", "X", "R", "causal_forest")
                                           ){
   
@@ -102,7 +106,7 @@ estimate_heterogenous_effects <- function(data,
     w = w, y = y, X = X, test_group = test_group, learner = learner, sample_prop = sample_prop
   )
   
-  data_sampled <- sample_data.(data, env$sample_prop)
+  data_sampled <- sample_data.(data, args = env)
   
   clean_data_list <- sanitise_data.(data_sampled, args = env)
   

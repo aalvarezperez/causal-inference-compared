@@ -70,9 +70,11 @@ explainer_cate <- explain(
   label = "causal forest"
     )
 
+# variable importance — seems age is important let's zoom into 'how' it is like that
+plot(DALEX::variable_importance(explainer_cate))
 
 # explain on dataset level:
-plot(predict_profile(explainer_cate, new_observation = lalonde[2,covs], variables = covs, type = "ceteris_paribus")) # age seems to be important
+plot(predict_profile(explainer_cate, new_observation = lalonde[2,covs], variables = covs, type = "ceteris_paribus")) # it is positively related to CATE
 plot(variable_profile(explainer_cate, variables = "age")) # subjects above 20 years see a positive impact on their susceptibility to treatment
 
 # explain on subject-level
@@ -84,6 +86,11 @@ plot(predict_parts(explainer_cate, new_observation = harry, type = "break_down_i
 
 # harry's prediction, had he been 20 years, instead of 30
 plot(predict_parts(explainer_cate, new_observation = harry_made_younger, type = "break_down_interactions"))
+
+# that's a ~30% less of an effect on harry, had he been 10 years younger
+(predict(explainer_cate, harry_made_younger) - predict(explainer_cate, harry))/(predict(explainer_cate, harry))
+
+# ~ end ~ 
 
 
 # These methods offer mainly 2 advantages for AB testing in eCG:
